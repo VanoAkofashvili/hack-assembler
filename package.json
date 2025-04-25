@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "start": "ts-node ./src/Main.ts",
+    "build": "tsc"
+  },
+  "name": "hack-assembler",
+  "version": "1.0.0",
+  "main": "dist/Main.js",
+  "repository": "git@github.com:VanoAkofashvili/hack-assembler.git",
+  "author": "Vaniko Akopashvili <vaniko.akopashvili@makingscience.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
