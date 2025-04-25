@@ -3,35 +3,50 @@
  */
 
 import fs, { writeFileSync, appendFileSync } from 'fs'
+import path from 'path'
 import { Code } from './Code'
 import { Parser } from './Parser'
 
-const asmToCompile = process.argv[2]
 
-if (!asmToCompile) {
-    throw new Error("Please provide a filename to compile")
-}
+(async function () {
 
-fs.writeFileSync
+    const filename = process.argv[2]
+    const asmToCompile = path.resolve(process.cwd(), filename)
 
-const parser = new Parser()
-const binaryExtractor = new Code()
-const outputFileName = asmToCompile.split('.')[0] + '.hack'
-writeFileSync(outputFileName, '')
-
-parser.open(asmToCompile)
-parser.processCommand((command) => {
-    console.log({ command })
-    let output = ''
-    if (command._tag === 'AInst') {
-        const labelBin = binaryExtractor.label(command.label)
-        output = labelBin
-    } else {
-        const dd = binaryExtractor.dest(command.dest)
-        const jj = binaryExtractor.jump(command.jump)
-        const cc = binaryExtractor.comp(command.comp)
-        output = `111${cc}${dd}${jj}`
+    if (!asmToCompile) {
+        throw new Error("Please provide a filename to compile")
     }
-    fs.appendFileSync(outputFileName, output + '\n')
-})
-parser.close()
+
+
+    const parser = new Parser(asmToCompile)
+    const code = new Code()
+    const outputFileName = asmToCompile.split('.')[0] + '.hack'
+    writeFileSync(outputFileName, '')
+
+
+    // First pass - handle labels
+    await parser.processLabels((label, currentLine) => {
+        code.addLabel(label, currentLine)
+    })
+
+
+
+    // Second pass - handle commands
+    await parser.processCommand(
+        (command) => {
+            let output = ''
+            if (command._tag === 'AInst') {
+                const labelBin = code.label(command.label)
+                output = labelBin
+            } else {
+                const dd = code.dest(command.dest)
+                const jj = code.jump(command.jump)
+                const cc = code.comp(command.comp)
+                output = `111${cc}${dd}${jj}`
+            }
+            fs.appendFileSync(outputFileName, output + '\n')
+        },
+    )
+
+
+})()

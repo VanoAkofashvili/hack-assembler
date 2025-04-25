@@ -1,3 +1,5 @@
+import { SymbolTable } from "./SymbolTable"
+
 /**
  * translates each field into its corresponding binary value
  */
@@ -55,6 +57,30 @@ const JMPTable = {
     'JMP': '111'
 }
 export class Code {
+    private symbolTable: SymbolTable
+    private availableAddress = 16
+
+    constructor() {
+        this.symbolTable = new SymbolTable()
+
+        // Predefined R0..R15 register symbols
+        for (let register = 0; register < 16; register++) {
+            this.symbolTable.set(`R${register}`, register)
+        }
+        // Other predefined symbols
+        this.symbolTable.set('SCREEN', 16384)
+        this.symbolTable.set('KBD', 24576)
+        this.symbolTable.set('SP', 0)
+        this.symbolTable.set('LCL', 1)
+        this.symbolTable.set('ARG', 2)
+        this.symbolTable.set('THIS', 3)
+        this.symbolTable.set('THAT', 4)
+    }
+
+    public addLabel(label: string, address: number) {
+        this.symbolTable.set(label, address)
+    }
+
     public comp(cc: Command) {
         return CompTable[cc] || CompTable['0']
     }
@@ -65,8 +91,24 @@ export class Code {
         return JMPTable[jj] || '000'
     }
     public label(ll: Command) {
-        return this.to16Binary(Number(ll))
+        if (this.isNumeric(ll)) return this.to16Binary(Number(ll))
+
+        if (this.symbolTable.has(ll)) {
+            return this.to16Binary(Number(this.symbolTable.get(ll)))
+        } else {
+            this.symbolTable.set(ll, this.availableAddress)
+
+            const value = this.to16Binary(Number(this.availableAddress))
+            this.availableAddress++
+            return value
+        }
     }
+
+
+    private isNumeric(str: string) {
+        return /^-?\d+$/.test(str);
+    }
+
     private to16Binary(n: number) {
         return n.toString(2).padStart(16, '0')
     }
