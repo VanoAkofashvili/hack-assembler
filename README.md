@@ -1,0 +1,1 @@
+run `yarn start filename` to compile the hack asm file
