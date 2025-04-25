@@ -36,6 +36,10 @@ export class Parser {
         this.rl = rl
     }
 
+    public close() {
+        this.rl.close
+    }
+
     private shouldIgnoreLine(line: string) {
         const startsWith = line.at(0)
 
@@ -51,8 +55,8 @@ export class Parser {
     }
 
     async processCommand(processor: (command: AInst | CInst) => void) {
-        for await (const line of this.rl) {
-            if (this.shouldIgnoreLine(line)) continue
+        this.rl.on('line', (line) => {
+            if (this.shouldIgnoreLine(line)) return
 
             const instType = this.getInstructionType(line)
             if (instType === InstType.AInst) {
@@ -71,22 +75,28 @@ export class Parser {
                 }
                 processor(command)
             }
-        }
+        })
     }
 
 
     private comp(command: string): string {
+        if (!command.includes('=')) {
+            return command.split(';').at(0)
+        }
         const [destComp] = command.split(';')
         const [, comp] = destComp.split('=')
-        return comp
+        return comp || ''
     }
     private dest(command: string): string {
+        if (!command.includes('=')) {
+            return ''
+        }
         const [dest,] = command.split('=')
-        return dest
+        return dest || ''
     }
     private jump(command: string): string {
         const [, jump] = command.split(';')
-        return jump
+        return jump?.trim() || ''
     }
     private label(command: string) {
         return command.split('@').at(1)

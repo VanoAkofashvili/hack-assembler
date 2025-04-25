@@ -2,6 +2,7 @@
  * initializes the I/O files and drives the process
  */
 
+import fs, { writeFileSync, appendFileSync } from 'fs'
 import { Code } from './Code'
 import { Parser } from './Parser'
 
@@ -11,24 +12,26 @@ if (!asmToCompile) {
     throw new Error("Please provide a filename to compile")
 }
 
+fs.writeFileSync
 
 const parser = new Parser()
 const binaryExtractor = new Code()
+const outputFileName = asmToCompile.split('.')[0] + '.hack'
+writeFileSync(outputFileName, '')
 
 parser.open(asmToCompile)
 parser.processCommand((command) => {
+    console.log({ command })
+    let output = ''
     if (command._tag === 'AInst') {
-        const ll = command.label
         const labelBin = binaryExtractor.label(command.label)
-        console.log({ command })
+        output = labelBin
     } else {
         const dd = binaryExtractor.dest(command.dest)
         const jj = binaryExtractor.jump(command.jump)
         const cc = binaryExtractor.comp(command.comp)
-        console.log({ command })
-        const binaryCode = `111${cc}${dd}${jj}`
-        console.log(binaryCode, 'binaryCode')
-        // write to file
+        output = `111${cc}${dd}${jj}`
     }
-
+    fs.appendFileSync(outputFileName, output + '\n')
 })
+parser.close()
